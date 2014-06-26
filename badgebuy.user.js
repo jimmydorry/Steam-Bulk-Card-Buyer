@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name			Steam Trading Cards Bulk Buyer
 // @namespace		http://www.doctormckay.com/
-// @version			3.1.2
+// @version			3.1.3
 // @description		Provides a button to purchase remaining cards needed for a badge in bulk
 // @match			http://steamcommunity.com/*/gamecards/*
 // @require			http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js
@@ -13,6 +13,17 @@ $.ajaxSetup({
 		withCredentials: true
 	}
 });
+
+//craft a badge if it is available
+var elements = $('div.badge_craft_button');
+var n = elements.length;
+if(n > 0){
+    for (var i = 0; i < n; i++) {
+        var e = elements[i];
+        
+        e.click();
+    }  
+}
 
 var links = $('.gamecards_inventorylink');
 var cards = [];
@@ -49,9 +60,26 @@ if(items.length == 0) {
 }
 
 if(links && $('.unowned').length > 0) {
-	links.append('<button type="button" class="btn_grey_grey btn_small_thin" id="buycards"><span>Buy remaining cards from Market</span></button');
-	$('#buycards').click(function() {
-		$('#buycards').hide();
+	//links.append('<button type="button" class="btn_grey_grey btn_small_thin" id="buycards"><span>Buy remaining cards from Market</span></button');
+    
+    $('.gamecards_inventorylink').append('<div id="buycardspanel" style="visibility: hidden; margin-top: 5px"></div>');
+    
+    var parts = window.location.href.split('/');
+		appid = parts[parts.length - 1];
+		if(appid == '' || appid.indexOf('?border=') == 0) {
+			appid = parts[parts.length - 2];
+		}
+		
+		if(appid.indexOf('?') != -1) {
+			appid = appid.substring(0, appid.indexOf('?'));
+		}
+		
+		updatePrices();
+    
+    	$('#buycardspanel').css('display', 'none').css('visibility', 'visible').show('blind'); // We have to do this visibility/display thing in order for offsetWidth to work
+    
+	/*$('#buycards').click(function() {
+		//$('#buycards').hide();
 		$('.gamecards_inventorylink').append('<div id="buycardspanel" style="visibility: hidden; margin-top: 5px"></div>');
 		
 		var parts = window.location.href.split('/');
@@ -67,11 +95,13 @@ if(links && $('.unowned').length > 0) {
 		updatePrices();
 		
 		$('#buycardspanel').css('display', 'none').css('visibility', 'visible').show('blind'); // We have to do this visibility/display thing in order for offsetWidth to work
-	});
+	});*/
 }
 
 var g_CommodityStatus = -1; // -1 = unknown, 0 = not a commodity, 1 = is a commodity
 var g_SessionID;
+var num_cards_to_buy = 0;
+var num_cards_bought = 0;
 
 function updatePrices() {
 	$('#buycardspanel').html('');
@@ -99,6 +129,7 @@ function updatePrices() {
 }
 
 function onCardPriceLoaded(data, textStatus) {
+    num_cards_to_buy++;
 	var html = $('<div></div>');
 	html.append($(data));
 	
@@ -193,7 +224,7 @@ function onCardPriceLoaded(data, textStatus) {
 					total += parseFloat(cards[i].price / 100);
 				}
 				
-				$('#buycardspanel').append('<br /><span style="font-weight: bold; display: inline-block; width: ' + $('.cardname').css('width') + '; padding-right: 10px; text-align: right">Total</span><b>' + g_CurrencyInfo[g_Currency].symbol + '<span id="totalprice">' + formatPrice(total.toFixed(2)) + '</span></b><br /><br /><button type="button" id="buycardsbutton" class="btn_green_white_innerfade btn_medium_wide" style="padding: 10px 20px; margin-left: ' + ($('.cardname').css('width').replace('px', '') / 2) + 'px">PLACE ORDERS</button>');
+				$('#buycardspanel').append('<br /><span style="font-weight: bold; display: inline-block; width: ' + $('.cardname').css('width') + '; padding-right: 10px; text-align: right">Total</span><b>' + g_CurrencyInfo[g_Currency].symbol + '<span id="totalprice">' + formatPrice(total.toFixed(2)) + '</span></b><br /><br /><button type="button" id="buycardsbutton" class="btn_green_white_innerfade btn_medium_wide" style="padding: 10px 20px; margin-left: ' + ($('.cardname').css('width').replace('px', '') / 2) + 'px">ORDERS ' + num_cards_to_buy + ' CARD(S)</button>');
 				$('#buycardsbutton').click(function() {
 					failures = [];
 					$('#buycardsbutton').hide();
@@ -315,8 +346,18 @@ function checkOrderStatus(card) {
 				decrementTotal((card.price - json.purchases[0].price_total) / 100);
 			}
 			
-			priceElement(card.name).text(formatPrice((json.purchases[0].price_total / 100).toFixed(2), true) + ' - Purchased');
-			return;
+			num_cards_bought++;
+            priceElement(card.name).text(formatPrice((json.purchases[0].price_total / 100).toFixed(2), true) + ' - Purchased (' + num_cards_bought + ')');
+			
+            if(num_cards_bought >= num_cards_to_buy){
+				/*$('#buycardspanel').append('<button type="button" id="reloadbutton" class="btn_green_white_innerfade btn_medium_wide" style="padding: 10px 20px 10px 20px; margin-left: ' + ($('.cardname').css('width').replace('px', '') / 2 - 25) + 'px">RELOAD PAGE</button>');
+				$('#reloadbutton').click(function() {
+					window.location.reload();
+				});*/
+                window.location.reload();
+			}
+            
+            return;
 		}
 		
 		if(!json.purchases.length) {
