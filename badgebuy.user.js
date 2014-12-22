@@ -364,9 +364,8 @@ function checkOrderStatus(card) {
 					window.location.reload();
 				});*/
                 window.location.reload();
+                return;
 			}
-            
-            return;
 		}
 		
 		if(!json.purchases.length) {
@@ -383,9 +382,8 @@ function checkOrderStatus(card) {
 						window.location.reload();
 					});*/
                 	window.location.reload();
+                    return;
 				}
-                
-                return;
 			}
 		}
 		
