@@ -335,22 +335,22 @@ function checkOrderStatus(card) {
 	
 	$.get('/market/getbuyorderstatus/', {sessionid: g_SessionID, buy_orderid: card.orderid}, function(json) {
 		if(!json.success) {
-			setTimeout(function() {
-				checkOrderStatus(card);
-			}, 500);
-            
+            //GET CALL FAILED
             if(num_cards_bought >= num_cards_to_buy){
-				/*$('#buycardspanel').append('<button type="button" id="reloadbutton" class="btn_green_white_innerfade btn_medium_wide" style="padding: 10px 20px 10px 20px; margin-left: ' + ($('.cardname').css('width').replace('px', '') / 2 - 25) + 'px">RELOAD PAGE</button>');
-				$('#reloadbutton').click(function() {
-					window.location.reload();
-				});*/
                 window.location.reload();
+                return;
 			}
+            else{
+            	setTimeout(function() {
+					checkOrderStatus(card);
+				}, 500);
+            }
             
 			return;
 		}
 		
 		if(json.purchases.length) {
+            //PURCHASE MADE
 			if(json.purchases[0].price_total < card.price) {
 				decrementTotal((card.price - json.purchases[0].price_total) / 100);
 			}
@@ -359,16 +359,14 @@ function checkOrderStatus(card) {
             priceElement(card.name).text(formatPrice((json.purchases[0].price_total / 100).toFixed(2), true) + ' - Purchased (' + num_cards_bought + ')');
 			
             if(num_cards_bought >= num_cards_to_buy){
-				/*$('#buycardspanel').append('<button type="button" id="reloadbutton" class="btn_green_white_innerfade btn_medium_wide" style="padding: 10px 20px 10px 20px; margin-left: ' + ($('.cardname').css('width').replace('px', '') / 2 - 25) + 'px">RELOAD PAGE</button>');
-				$('#reloadbutton').click(function() {
-					window.location.reload();
-				});*/
-                window.location.reload();
-                return;
+				window.location.reload();
 			}
+            
+            return;
 		}
 		
 		if(!json.purchases.length) {
+            //NO PURCHASE MADE
 			card.checks++;
 			if(card.checks >= 10) {
 				cancelBuyOrder(card.orderid);
@@ -376,15 +374,9 @@ function checkOrderStatus(card) {
 				decrementTotal(card.price / 100);
                 num_cards_bought++;
 				
-                if(num_cards_bought >= num_cards_to_buy){
-					/*$('#buycardspanel').append('<button type="button" id="reloadbutton" class="btn_green_white_innerfade btn_medium_wide" style="padding: 10px 20px 10px 20px; margin-left: ' + ($('.cardname').css('width').replace('px', '') / 2 - 25) + 'px">RELOAD PAGE</button>');
-					$('#reloadbutton').click(function() {
-						window.location.reload();
-					});*/
-                	window.location.reload();
-                    return;
-				}
-			}
+                window.location.reload();
+                return;
+            }
 		}
 		
 		setTimeout(function() {
